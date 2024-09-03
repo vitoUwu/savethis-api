@@ -12,6 +12,8 @@ interface IPost {
   savedBy: string;
   uri: string;
   cid: string;
+  text?: string;
+  authorHandle?: string;
 }
 
 export const PostModel = model(
@@ -35,7 +37,9 @@ export const PostModel = model(
       cid: {
         required: true,
         type: String
-      }
+      },
+      text: String,
+      authorHandle: String
     },
     {
       timestamps: true

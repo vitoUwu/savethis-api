@@ -64,12 +64,16 @@ client.on("message", async (message: SubscribeReposMessage) => {
           }
 
           if (thread.parent && isThreadViewPost(thread.parent)) {
-            logger.info(`Someone mentionated me in a reply`);
+            logger.info("Someone tagged me in a reply");
+            const { uri, cid, text, author } = thread.parent.post;
+
             await PostModel.create({
               postKey: `${message.repo}/${postId}`, // is there other way to do this?
               savedBy: message.repo,
-              uri: thread.parent.post.uri,
-              cid: thread.parent.post.cid
+              uri,
+              cid,
+              text,
+              authorHandle: author.handle
             });
             // TODO: send a notification to the user
           }
