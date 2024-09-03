@@ -25,7 +25,10 @@ function saveSessionLocally(session: AtpSessionData) {
 }
 
 const sessionFile = Bun.file(SESSION_PATH);
-if (!(await sessionFile.exists())) {
+const sessionData: AtpSessionData | null = (await sessionFile.exists())
+  ? await sessionFile.json()
+  : null;
+if (!sessionData || sessionData.handle !== IDENTIFIER) {
   const login = await agent.login({
     identifier: IDENTIFIER,
     password: PASSWORD
@@ -43,8 +46,7 @@ if (!(await sessionFile.exists())) {
   await saveSessionLocally(session);
   logger.log(`Session created @${agent.session?.handle}`);
 } else {
-  const session = await sessionFile.json();
-  await agent.resumeSession(session);
+  await agent.resumeSession(sessionData);
   logger.log(`Session resumed @${agent.session?.handle}`);
 }
 
