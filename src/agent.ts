@@ -1,5 +1,6 @@
 import { AtpAgent, type AtpSessionData } from "@atproto/api";
 import logger from "./logger";
+import fs from "node:fs";
 
 const SESSION_PATH = "./src/session.json";
 const IDENTIFIER = process.env.IDENTIFIER;
@@ -21,12 +22,14 @@ const agent = new AtpAgent({
 });
 
 function saveSessionLocally(session: AtpSessionData) {
-  return Bun.write(SESSION_PATH, JSON.stringify(session));
+  return fs.writeFileSync(SESSION_PATH, JSON.stringify(session));
 }
 
-const sessionFile = Bun.file(SESSION_PATH);
-const sessionData: AtpSessionData | null = (await sessionFile.exists())
-  ? await sessionFile.json()
+const sessionFile = fs.existsSync(SESSION_PATH)
+  ? fs.readFileSync(SESSION_PATH, { encoding: "utf-8" })
+  : null;
+const sessionData: AtpSessionData | null = sessionFile
+  ? JSON.parse(sessionFile)
   : null;
 if (!sessionData || sessionData.handle !== IDENTIFIER) {
   const login = await agent.login({
