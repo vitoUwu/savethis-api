@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@atproto/api": "^0.13.5",
-    "atproto-firehose": "^0.2.2",
+    "@skyware/firehose": "^0.3.1",
     "mongoose": "^8.6.0"
   }
 }

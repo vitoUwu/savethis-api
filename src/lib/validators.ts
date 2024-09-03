@@ -9,11 +9,11 @@ export interface Op {
   cid: string | null;
   path: string;
   action: string;
-  payload?: any;
+  record?: any;
 }
 
 export interface FollowOp extends Op {
-  payload: {
+  record: {
     $type: OpType.Follow;
     subject: string;
     createdAt: string;
@@ -21,7 +21,7 @@ export interface FollowOp extends Op {
 }
 
 export interface LikeOp extends Op {
-  payload: {
+  record: {
     $type: OpType.Like;
     subject: {
       cid: string;
@@ -32,7 +32,7 @@ export interface LikeOp extends Op {
 }
 
 export interface RepostOp extends Op {
-  payload: {
+  record: {
     $type: OpType.Repost;
     subject: {
       cid: string;
@@ -42,14 +42,14 @@ export interface RepostOp extends Op {
   };
 }
 
-export interface UnfollowOp extends Omit<Op, "payload" | "cid"> {
+export interface UnfollowOp extends Omit<Op, "record" | "cid"> {
   action: "delete";
   cid: null;
 }
 
 export interface CreatePostOp extends Op {
   action: "create";
-  payload: {
+  record: {
     text: string;
     $type: OpType.Post;
     langs: string[];
@@ -68,11 +68,11 @@ export interface CreatePostOp extends Op {
 }
 
 export function isFollow(op: Op): op is FollowOp {
-  return op.action === "create" && op.payload?.["$type"] === OpType.Follow;
+  return op.action === "create" && op.record?.["$type"] === OpType.Follow;
 }
 
 export function isCreatePost(op: Op): op is CreatePostOp {
-  return op.action === "create" && op.payload?.$type === OpType.Post;
+  return op.action === "create" && op.record?.$type === OpType.Post;
 }
 
 export function isUnfollow(op: Op): op is UnfollowOp {
@@ -80,9 +80,9 @@ export function isUnfollow(op: Op): op is UnfollowOp {
 }
 
 export function isLike(op: Op): op is LikeOp {
-  return op.payload?.["$type"] === OpType.Like;
+  return op.record?.["$type"] === OpType.Like;
 }
 
 export function isRepost(op: Op): op is RepostOp {
-  return op.payload?.["$type"] === OpType.Repost;
+  return op.record?.["$type"] === OpType.Repost;
 }

@@ -1,45 +1,31 @@
 import { ComAtprotoSyncSubscribeRepos, RichText } from "@atproto/api";
 import {
-  isThreadViewPost,
-  type ThreadViewPost
+  type ThreadViewPost,
+  isThreadViewPost
 } from "@atproto/api/dist/client/types/app/bsky/feed/defs";
 import type { Mention } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
-import {
-  EventStreamError,
-  XrpcEventStreamClient,
-  subscribeRepos,
-  type SubscribeReposMessage
-} from "atproto-firehose";
+import { Firehose } from "@skyware/firehose";
 import agent from "./agent";
 import { isCreatePost } from "./lib/validators";
 import logger from "./logger";
 import { PostModel } from "./mongoose";
 
-// @ts-expect-error "error" can be undefined for some reason
-XrpcEventStreamClient.prototype.handleError = function (
-  error: Error,
-  message: string
-) {
-  console.error(error);
-  this.emit(
-    "error",
-    new EventStreamError(error?.toString() || "Unknown error", message)
-  );
-  // this.close(); i shouldnt keep the connection open, but who cares
-};
+const client = new Firehose({
+  autoReconnect: true,
+  relay: "wss://bsky.network"
+});
 
-const client = subscribeRepos(`wss://bsky.network`, { decodeRepoOps: true });
-
+client.on("open", () => logger.info("Connected to firehose"));
 client.on("error", logger.error);
-client.on("message", async (message: SubscribeReposMessage) => {
-  if (ComAtprotoSyncSubscribeRepos.isCommit(message)) {
-    const op = message.ops[0];
+client.on("commit", async (commit) => {
+  if (ComAtprotoSyncSubscribeRepos.isCommit(commit)) {
+    const op = commit.ops[0];
     if (!op) {
       return;
     }
 
     if (isCreatePost(op)) {
-      const rt = new RichText({ text: op.payload.text });
+      const rt = new RichText({ text: op.record.text });
       rt.detectFacetsWithoutResolution();
 
       const tags =
@@ -55,12 +41,12 @@ client.on("message", async (message: SubscribeReposMessage) => {
 
       if (someoneMentionatedMe) {
         try {
-          const uri = `at://${message.repo}/${op.path}`;
+          const uri = `at://${commit.repo}/${op.path}`;
           const postId = uri.split("/").pop();
           const post = await agent.getPostThread({ uri }).catch(() => null);
           const thread = post?.data.thread as ThreadViewPost;
           if (!thread || "notFound" in thread || "blocked" in thread) {
-            return logger.warn(`post not found or blocked`);
+            return logger.warn("post not found or blocked");
           }
 
           if (thread.parent && isThreadViewPost(thread.parent)) {
@@ -68,8 +54,8 @@ client.on("message", async (message: SubscribeReposMessage) => {
             const { uri, cid, text, author } = thread.parent.post;
 
             await PostModel.create({
-              postKey: `${message.repo}/${postId}`, // is there other way to do this?
-              savedBy: message.repo,
+              postKey: `${commit.repo}/${postId}`, // is there other way to do this?
+              savedBy: commit.repo,
               uri,
               cid,
               text,
@@ -85,3 +71,4 @@ client.on("message", async (message: SubscribeReposMessage) => {
     }
   }
 });
+client.start();
