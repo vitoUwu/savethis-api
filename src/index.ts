@@ -4,7 +4,7 @@ import {
   isThreadViewPost
 } from "@atproto/api/dist/client/types/app/bsky/feed/defs";
 import type { Mention } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
-import { Firehose } from "@skyware/firehose";
+import { Firehose } from "./firehose.ts";
 import agent from "./agent";
 import { isCreatePost } from "./lib/validators";
 import logger from "./logger";
