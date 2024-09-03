@@ -1,88 +1,16 @@
-export enum OpType {
-  Follow = "app.bsky.graph.follow",
-  Like = "app.bsky.feed.like",
-  Repost = "app.bsky.feed.repost",
-  Post = "app.bsky.feed.post"
-}
+import {
+  type Record as PostRecord,
+  isRecord as isPostRecord
+} from "@atproto/api/dist/client/types/app/bsky/feed/post";
+import type { RepoOp } from "../firehose";
 
-export interface Op {
-  cid: string | null;
+export interface CreatePostOp {
+  cid: unknown;
   path: string;
-  action: string;
-  record?: any;
-}
-
-export interface FollowOp extends Op {
-  record: {
-    $type: OpType.Follow;
-    subject: string;
-    createdAt: string;
-  };
-}
-
-export interface LikeOp extends Op {
-  record: {
-    $type: OpType.Like;
-    subject: {
-      cid: string;
-      uri: string;
-    };
-    createdAt: string;
-  };
-}
-
-export interface RepostOp extends Op {
-  record: {
-    $type: OpType.Repost;
-    subject: {
-      cid: string;
-      uri: string;
-    };
-    createdAt: string;
-  };
-}
-
-export interface UnfollowOp extends Omit<Op, "record" | "cid"> {
-  action: "delete";
-  cid: null;
-}
-
-export interface CreatePostOp extends Op {
   action: "create";
-  record: {
-    text: string;
-    $type: OpType.Post;
-    langs: string[];
-    reply?: {
-      root: {
-        cid: string;
-        uri: string;
-      };
-      parent: {
-        cid: string;
-        uri: string;
-      };
-    };
-    createdAt: string;
-  };
+  record: PostRecord;
 }
 
-export function isFollow(op: Op): op is FollowOp {
-  return op.action === "create" && op.record?.["$type"] === OpType.Follow;
-}
-
-export function isCreatePost(op: Op): op is CreatePostOp {
-  return op.action === "create" && op.record?.$type === OpType.Post;
-}
-
-export function isUnfollow(op: Op): op is UnfollowOp {
-  return op.action === "delete" && op.action.includes(OpType.Follow);
-}
-
-export function isLike(op: Op): op is LikeOp {
-  return op.record?.["$type"] === OpType.Like;
-}
-
-export function isRepost(op: Op): op is RepostOp {
-  return op.record?.["$type"] === OpType.Repost;
+export function isCreatePostCommit(op: RepoOp): op is CreatePostOp {
+  return op.action === "create" && isPostRecord(op.record);
 }
