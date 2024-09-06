@@ -73,9 +73,16 @@ client.on("commit", async (commit) => {
               : undefined;
 
           if (root) {
+            const reply = new RichText({
+              text: "Post saved successfully! Access it here: https://savethis.vitoo.dev/",
+            });
+
+            reply.detectFacetsWithoutResolution();
+
             await agent.post({
               createdAt: new Date().toISOString(),
-              text: "Post saved successfully! Access it here: https://savethis.vercel.app/",
+              text: reply.text,
+              facets: reply.facets,
               langs: ["en"],
               reply: {
                 parent,
